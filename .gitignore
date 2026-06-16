@@ -1,0 +1,12 @@
+ # Log dosyalarını engelle
+*.log
+log-collector/app.log
+
+# Go derleme ve geçici dosyaları
+/dist/
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
