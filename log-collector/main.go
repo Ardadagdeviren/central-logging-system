@@ -56,6 +56,8 @@ func logHandler(w http.ResponseWriter, r *http.Request) {
 	logSatiri := fmt.Sprintf("[%v] [%s] [%s] %s\n", yeniLogVerisi.Zaman, yeniLogVerisi.Servis, yeniLogVerisi.Seviye, yeniLogVerisi.Mesaj)
 	//log satını string yazdım ilerde rahat okumak için
 
+	fmt.Println(logSatiri)
+
 	_, err = logFile.WriteString(logSatiri) //logFile dosyasına yazdım
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
