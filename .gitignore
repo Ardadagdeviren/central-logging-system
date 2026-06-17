@@ -10,3 +10,7 @@ log-collector/app.log
 *.dll
 *.so
 *.dylib
+
+echo ".DS_Store" >> .gitignore
+echo "log-collecter/.DS_Store" >> .gitignore
+echo "log-collecter/app.log" >> .gitignore

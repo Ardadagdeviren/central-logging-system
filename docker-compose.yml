@@ -1,0 +1,26 @@
+services:
+  log-collector-service:
+    build:
+      context: ./log-collector
+      dockerfile: dockerfile
+    container_name: log-collector-container
+    ports: 
+      - "8080:8080"
+    volumes:
+      - ./log-collector/app.log:/app/app.log
+    networks:
+      - log-net
+  log-generator-service:
+    build:
+      context: ./log-generator
+      dockerfile: Dockerfile
+    container_name: log-generator-container
+    networks:
+      - log-net
+    depends_on:
+      - log-collector-service    
+
+
+networks:
+  log-net:
+    driver: bridge
