@@ -1,12 +1,8 @@
 package main
 
 import (
-	//"encoding/json"
-	//"fmt"
-	//"net/http"
-	//"os"
 	"bytes"
-	"encoding/json"
+	"encoding/json" //gerekli kütüphaneleri yapay zekaya yaptırdım geri bakıcam
 	"fmt"
 	"math/rand/v2"
 	"net/http"
@@ -20,7 +16,7 @@ type LogVerisi struct {
 	Servis string    `json:"service"`
 }
 
-func main() {
+func main() { //Hazır bilgiler burda ,belki ileride bu dizilere yapay zekayı bağlayıp kendisine log bilgilerini üretirebilirim log çeşidimiz artsın diye
 	servisler := []string{"auth-service", "payment-service", "user-profile"}
 	seviyeler := []string{"INFO", "WARN", "ERROR", "DEBUG"}
 	mesajlar := []string{"Kullanıcı giriş yaptı", "Veritabanı bağlantısı yavaşladı", "Ödeme başarısız oldu!"}
@@ -39,7 +35,7 @@ func main() {
 			Servis: randServis,
 		}
 
-		jsonDilindeVeri, err := json.Marshal(yeniLog)
+		jsonDilindeVeri, err := json.Marshal(yeniLog) //marshal json diline çeviriyor unmarshal geri koda dönüştürüyor
 		if err != nil {
 			fmt.Print("Log verilerini jsona çeviremedi")
 			return
@@ -47,7 +43,7 @@ func main() {
 
 		url := "http://log-collector-container:8080/logs"
 		contentType := "application/json"
-		body := bytes.NewBuffer(jsonDilindeVeri)
+		body := bytes.NewBuffer(jsonDilindeVeri) //burayı tam anlamadım bir daha bakıcam yapay zekaya yaptırdım
 		cevap, err := http.Post(url, contentType, body)
 
 		if err != nil {
@@ -60,7 +56,7 @@ func main() {
 
 }
 
-func rastgeleVeriSec(dizi []string) string {
+func rastgeleVeriSec(dizi []string) string { //Dizideki verileri rastgele loglara yerleştiren func
 	uzunluk := len(dizi)
 
 	randIndex := rand.IntN(uzunluk)

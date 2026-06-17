@@ -2,8 +2,8 @@
 *.log
 log-collector/app.log
 
-# Go derleme ve geçici dosyaları
-/dist/
+# Burayı yapau zekaya yaptırdım dönüp bir daha bakıcam 
+/dist/                  
 /bin/
 *.exe
 *.exe~
