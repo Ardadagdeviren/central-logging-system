@@ -1,0 +1,163 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"sync"
+	"time"
+)
+
+const logFileName = "app.json" // Artık loglar json uzantılı dosyada saklanacak
+var mu sync.Mutex
+
+// 🧠 İŞTE BEKLEDİĞİN STRUCT (VERİ MODELİ):
+// Her bir log satırını bu kalıba göre şekillendireceğiz.
+type LogMessage struct {
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"` // INFO, WARN, ERROR
+	Message   string `json:"message"`
+	Source    string `json:"source"` // log-generator, vb.
+}
+
+func main() {
+	// Temiz bir JSON dosyası oluştuğundan emin olalım
+	file, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Log dosyası açılamadı: %v", err)
+	}
+	file.Close()
+
+	// Endpoints
+	http.HandleFunc("/collect", handleCollect) // Generator buraya JSON fırlatacak
+	http.HandleFunc("/logs", handleGetLogs)    // JavaScript buraya gelip JSON dizisi çekecek
+
+	fmt.Println("🚀 JSON Destekli Log Collector API 8080 portunda hazır...")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Sunucu başlatılamadı: %v", err)
+	}
+}
+
+// Dışarıdan (Generator'dan) gelen logları JSON dosyasına ekleyen fonksiyon
+func handleCollect(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Sadece POST desteklenir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Body okunamadı", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// Gelen veriyi (ham metni veya doğrudan JSON'ı) kontrol altında tutmak için struct'a dönüştürüyoruz
+	var incomingLog LogMessage
+
+	// Eğer generator düz metin gönderiyorsa onu anlamlı bir struct nesnesine çevirelim:
+	// (Eğer generator zaten hazır JSON gönderiyorsa direkt json.Unmarshal(body, &incomingLog) yapabilirdik)
+	incomingLog = LogMessage{
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
+		Level:     "INFO", // Varsayılan, eğer generator'dan log seviyesi ayrımı gelmiyorsa
+		Message:   string(body),
+		Source:    "log-generator",
+	}
+
+	// Eğer generator mesajın içinde "ERROR" veya "WARN" geçiriyorsa log seviyesini dinamik olarak güncelleyelim
+	// Bu tamamen siber güvenlikçi zekası!
+	if contains(incomingLog.Message, "ERROR") || contains(incomingLog.Message, "hata") {
+		incomingLog.Level = "ERROR"
+	} else if contains(incomingLog.Message, "WARN") || contains(incomingLog.Message, "uyari") {
+		incomingLog.Level = "WARN"
+	}
+
+	// Nesnemizi dosyaya yazmak için tek satırlık bir JSON string'ine çeviriyoruz (Marshalling)
+	jsonBytes, err := json.Marshal(incomingLog)
+	if err != nil {
+		http.Error(w, "JSON'a çevrilemedi", http.StatusInternalServerError)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	file, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		http.Error(w, "Dosyaya yazılamadı", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// JSON satırını dosyaya yaz ve konsola bas
+	fmt.Fprintln(file, string(jsonBytes))
+	fmt.Printf("[JSON LOG KAYDEDİLDİ] %s\n", string(jsonBytes))
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("JSON Log mühürlendi"))
+}
+
+// 🌐 Frontend (JavaScript) için tüm dosyayı JSON Array (Dizi) olarak dönen fonksiyon
+func handleGetLogs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8") // Tipi JSON yaptık!
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Sadece GET desteklenir", http.StatusMethodNotAllowed)
+		return
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	file, err := os.Open(logFileName)
+	if err != nil {
+		http.Error(w, "Log dosyası okunamadı", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Dosyayı satır satır okuyup bir struct dizisine (Slice) dolduruyoruz
+	var allLogs []LogMessage
+	var line string
+
+	// Dosyadaki her satır bağımsız birer JSON objesidir (JSON Lines formatı)
+	// Hepsini okuyup diziye ekliyoruz ki frontend'e tek bir dev [{}, {}, {}] paketi gitsin.
+	dec := json.NewDecoder(file)
+	for {
+		var logObj LogMessage
+		if err := dec.Decode(&logObj); err == io.EOF {
+			break
+		} else if err != nil {
+			// Hatalı satırları atla
+			continue
+		}
+		allLogs = append(allLogs, logObj)
+	}
+
+	// Tüm diziyi tek seferde JSON formatında tarayıcıya fırlatıyoruz
+	json.NewEncoder(w).Encode(allLogs)
+}
+
+// Basit string arama yardımcı fonksiyonu
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && stringContains(s, substr)
+}
+func stringContains(s, substr string) bool {
+	// Go standart kütüphanesindeki strings paketini şişirmemek için minik bir mantık
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

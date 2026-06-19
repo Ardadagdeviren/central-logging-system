@@ -1,0 +1,70 @@
+/* 🪐 1. Parça: Global Ayarlar ve Yazı Tipi */
+body {
+    background-color: #0d1117; /* GitHub'ın o asil koyu siyah/gri arka planı */
+    color: #c9d1d9;            /* Gözü yormayan beyaz/gri yazı rengi */
+    font-family: 'Courier New', Courier, monospace; /* Tam bir hacker/terminal fontu! */
+    margin: 0;
+    padding: 20px;
+}
+
+/* 🛸 2. Parça: Dashboard ve Header Alanı */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;                   
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #21262d;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h1 {
+    font-size: 20px;
+    margin: 0;
+    color: #58a6ff; /* Kurumsal mavi başlık */
+}
+
+/* 📟 3. Parça: İŞTE O MEŞHUR TERMİNAL EKRANI (Can Damarı) */
+.terminal-screen {
+    background-color: #010409; /* Kapkaranlık iç ekran */
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    height: 500px;             /* Kutunun yüksekliğini sabitledik */
+    padding: 15px;
+    
+    /* 🚨 DEVOPS KLASİĞİ: Loglar aşağı doğru taştığında otomatik kaydırma çubuğu çıkar */
+    overflow-y: auto;          
+    
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+/* 🎨 4. Parça: Log Satırları ve Siber Güvenlik Renk Kodları */
+.log-line {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+    white-space: pre-wrap; /* Satır çok uzunsa alt satıra pürüzsüzce kaysın */
+    border-bottom: 1px dashed #161b22;
+    padding-bottom: 4px;
+}
+
+/* 🟢 Başarılı Loglar (INFO) */
+.log-info {
+    color: #39ff14; /* Fosforlu Neon Yeşil */
+}
+
+/* 🟡 Uyarı Logları (WARN) */
+.log-warn {
+    color: #ffcc00; /* Fosforlu Neon Sarı */
+}
+
+/* 🔴 Tehlikeli Loglar (ERROR) */
+.log-error {
+    color: #ff3333; /* Fosforlu Neon Kırmızı */
+    font-weight: bold;
+    background-color: rgba(255, 51, 51, 0.1); /* Arkasına hafif kırmızı gölge */
+}

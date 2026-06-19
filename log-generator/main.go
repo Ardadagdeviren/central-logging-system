@@ -41,13 +41,21 @@ func main() { //Hazır bilgiler burda ,belki ileride bu dizilere yapay zekayı b
 			return
 		}
 
-		url := "http://log-collector-container:8080/logs"
+		url := "http://log-collector-service:8080/collect"
 		contentType := "application/json"
 		body := bytes.NewBuffer(jsonDilindeVeri) //burayı tam anlamadım bir daha bakıcam yapay zekaya yaptırdım
+
+		//Kendime not:
+		// Bu satırın yaptığı iş tam olarak şudur: Kovadaki suyun (statik bayt dizisinin) altına bir musluk (Buffer) takmak.
+		//bytes.NewBuffer, senin oluşturduğun o statik []byte verisini içine alır.
+		//Onu ağ üzerinden parça parça okunmaya hazır, akışkan bir yapıya dönüştürür.
+		//Artık elindeki body değişkeni sıradan bir veri değil, http.Post fonksiyonunun ucunu bağlayıp veriyi hüpletilerek çekebileceği bir okuma borusudur.
+
 		cevap, err := http.Post(url, contentType, body)
 
 		if err != nil {
 			fmt.Println("post isteği atarken sorun oldu")
+			continue
 		}
 		cevap.Body.Close()
 

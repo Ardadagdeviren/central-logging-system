@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canlı Log izleme Paneli</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+
+    <div class="dashboard-container">
+        
+        <header class="dashboard-header">
+            <div class="logo-area">
+                <span class="pulse-icon"></span>
+                <h1> Canlı Log İzleme Sistemi</h1>
+            </div>
+            <div class="system-status">
+                Sunucu Durumu: <span class="status-online">AKTİF</span>
+            </div>
+        </header>
+
+        <div class="filtre">
+        <label for="level-filter">Logları Filtrele</label>
+        <select id="level-filter">
+            <option value="ALL">Tüm Loglar</option>
+            <option value="INFO">Sadece INFO</option>
+            <option value="WARN">Sadece Warn</option>
+            <option value="ERROR">Sadece Error</option>
+        </select>
+    </div>
+
+        <div id="log-container" class="terminal-screen">
+            </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

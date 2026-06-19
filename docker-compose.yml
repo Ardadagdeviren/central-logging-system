@@ -7,7 +7,8 @@ services:
     ports: 
       - "8080:8080"
     volumes:
-      - ./log-collector/app.log:/app/app.log
+      - shared-logs:/app
+    restart: always
     networks:
       - log-net
   log-generator-service:
@@ -17,22 +18,28 @@ services:
     container_name: log-generator-container
     networks:
       - log-net
-    depends_on:
+    depends_on:         #collector çalışmadan generatoru başlatma
       - log-collector-service  
 
-  log-viewer-dozzle:
-    image: amir20/dozzle:latest
-    container_name: log-viewer-container
+  log-viewer-service:
+    image: nginx:alpine
+    container_name: netinternet-dashboard
     ports:
-    - "8888:8080"
+      - "8888:80" 
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock:ro  
-    
+      - ./log-viewer:/usr/share/nginx/html:ro
+    networks:
+      - log-net 
+    restart: always 
+  
     
 
-
+    
 networks:
   log-net:
     driver: bridge
 
+  #bilgisiyarımda ortak depolama alanı oluşturmasını söylüyorum app.json falan bunun içinde oluyor.
+volumes:
+  shared-logs:
   
