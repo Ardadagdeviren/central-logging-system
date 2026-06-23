@@ -4,9 +4,18 @@ COPY go.mod ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o log-collector .
+# copy deki ilk nokta bilgisayarımdaki klasör ikici nokta dockerıdaki /app
+# run go mod download gerekli kütüphaneleri indiriyor ve önbelleğe alıyor hız kazandırmamız sağlıyor
+#RUN : çalıştırılabilir binary dosya verir
+# CGO_ENABLED=0: işletim sisteminde gömülü c kütüphanelerini kullanma diyoruz docker bu sayede her yerde çalışabiliyor.
+# GOOS=linux makinenin linux olacağını söylüyor dockerlar linux tabanlı çalıştığı için.
+
+
+#üsteki imajda neden linux sürümü veriyoruzda alttaki imajda latest diyoruz:Çünkü derlenirken kararlı derlenmesini isteriz yeni sürümdeki herhangi bir değişiklik benim kodumu etkileyebilir.Ve çalışırken yeni güvenlik açıklarından etklinmemek için ise en güncel halini isterim.
 
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/log-collector .
 RUN touch app.log
 CMD ["./log-collector"]
+#CMD : terminale ./log-collector yazıyor bu sayede collecter çalışmaya başlıyor

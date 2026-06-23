@@ -1,8 +1,16 @@
- # Log dosyalarını engelle
+# Log dosyalarını engelle (Hem ana dizindekileri hem collector içindekini)
 *.log
 log-collector/app.log
 
-# Burayı yapau zekaya yaptırdım dönüp bir daha bakıcam 
+# macOS işletim sisteminin otomatik oluşturduğu gizli çöp dosyaları
+.DS_Store
+log-collector/.DS_Store
+
+# Çevre değişkenleri (API ANAHTARININ GİTMEMESİ İÇİN ŞART!)
+*.env
+.env
+
+# Derlenmiş (Build edilmiş) klasörler ve binary dosyalar
 /dist/                  
 /bin/
 *.exe
@@ -11,6 +19,4 @@ log-collector/app.log
 *.so
 *.dylib
 
-echo ".DS_Store" >> .gitignore
-echo "log-collecter/.DS_Store" >> .gitignore
-echo "log-collecter/app.log" >> .gitignore
+#BURAYI YAPAY ZEKAYA YAPTIRDIM DÖNÜP TEKRAR BAKICAM

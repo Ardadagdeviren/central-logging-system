@@ -1,4 +1,5 @@
 let tumLoglar = [];
+const MAX_LOG_SAYISI = 50;
 
 document.addEventListener(`DOMContentLoaded`, () => {
     fetchLogs();
@@ -19,20 +20,20 @@ async function fetchLogs(){      //Kendime not : async olmayan bir fonksiyonda a
         }
 
         const rawData = await response.text();
-        const satirlar = rawData.split(`\n`);
+        const satirlar = rawData.split(`\n`);      //split geriye dizi döndürüyor
         const geciciLogListesi = [];
 
         satirlar.forEach(satir => {
             
             try {
-                const logObj = JSON.parse(satir);
+                const logObj = JSON.parse(satir);      //json formatını js objesine dönüştürür
                 geciciLogListesi.push(logObj);
-            } catch (jsonErr) {
+            } catch (jsonErr) {         //jsonErr catchin içinde bir parametre otomatik js tanımlar
                 console.warn("bozuk json satırı atlandı:", satir);
             }
         });
 
-        tumLoglar = geciciLogListesi;
+        tumLoglar = geciciLogListesi.slice(-MAX_LOG_SAYISI);
         ekranaBas();
     } catch (error) {
         console.error("Loglar çekilirken javascirpte sorun oldu:", error);
@@ -72,5 +73,5 @@ function renderLogLine(yeniLog, container) {
     logSatiri.innerText = `[${yeniLog.timestamp}] [${yeniLog.service}] [${yeniLog.level}]: ${yeniLog.message}`;
 
     container.appendChild(logSatiri);
-    container.scrollTop = container.scrollHeight;
+    
 }

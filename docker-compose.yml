@@ -4,11 +4,13 @@ services:
       context: ./log-collector
       dockerfile: dockerfile
     container_name: log-collector-container
+    environment:
+      - TZ=Europe/Istanbul
     ports: 
-      - "8080:8080"
+      - "8080:8080"    #ilk port benim bilgisayarımın portu ikinci port collector konteynırının portu.Yani benim bilgisayara 8080 den gelenleri konteynırın 8080 nine ilet demek
     volumes:
       - shared-logs:/app
-    restart: always
+    restart: always     # çökerse otomatik çalışmasını sağlar
     networks:
       - log-net
   log-generator-service:
@@ -16,6 +18,9 @@ services:
       context: ./log-generator
       dockerfile: Dockerfile
     container_name: log-generator-container
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - TZ=Europe/Istanbul
     networks:
       - log-net
     depends_on:         #collector çalışmadan generatoru başlatma
@@ -27,7 +32,7 @@ services:
     ports:
       - "8888:80" 
     volumes:
-      - ./log-viewer:/usr/share/nginx/html:ro
+      - ./log-viewer:/usr/share/nginx/html:ro      #benim bilgisayarımdaki log-viewrı klasörü ile konteynırdaki web ile köprü kurar
     networks:
       - log-net 
     restart: always 

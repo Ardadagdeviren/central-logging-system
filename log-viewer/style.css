@@ -68,3 +68,9 @@ body {
     font-weight: bold;
     background-color: rgba(255, 51, 51, 0.1); /* Arkasına hafif kırmızı gölge */
 }
+
+.log-debug {
+    color:#58a6ff;
+    
+    
+}

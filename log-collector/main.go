@@ -61,7 +61,7 @@ func logHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close() //açılan Bodyi kapattım
 
 	var yeniLogVerisi logVerisi
-	decoder := json.NewDecoder(r.Body)    //decoder:Akan json formatındaki veriyi goloangin diline çevirir.Http istekleri komple bi anda gelmez.Akan su gibi geldiği için json.marshal kullanamayız json.marshal sonu belli olan komple indirilmiş veriler içindir.
+	decoder := json.NewDecoder(r.Body)    //stream:akış    //decoder:Akan json formatındaki veriyi goloangin diline çevirir.Http istekleri komple bi anda gelmez.Akan su gibi geldiği için json.marshal kullanamayız json.marshal sonu belli olan komple indirilmiş veriler içindir.
 	err := decoder.Decode(&yeniLogVerisi) //burda da okunan veriyi yenilogverisine işliyoruz.Bu sayede gelen veri benim istedğim logVerisi türüne uygun mu onuda görmüş oluyoruz.Güvenlik sağlanmış oluyor.
 
 	if err != nil {
