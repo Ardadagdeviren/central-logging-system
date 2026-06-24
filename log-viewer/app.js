@@ -3,14 +3,14 @@ const MAX_LOG_SAYISI = 50;
 
 document.addEventListener(`DOMContentLoaded`, () => {
     fetchLogs();
-    setInterval(fetchLogs, 1000);
+
     const filterSelect = document.getElementById(`level-filter`);
     if (filterSelect) {
         filterSelect.addEventListener(`change`, ekranaBas);
     }
 });
 
-async function fetchLogs(){      //Kendime not : async olmayan bir fonksiyonda await kullanamassın.
+async function fetchLogs() {      //Kendime not : async olmayan bir fonksiyonda await kullanamassın.
 
     try {
         const response = await fetch(`http://localhost:8080/get-logs`);
@@ -24,7 +24,7 @@ async function fetchLogs(){      //Kendime not : async olmayan bir fonksiyonda a
         const geciciLogListesi = [];
 
         satirlar.forEach(satir => {
-            
+
             try {
                 const logObj = JSON.parse(satir);      //json formatını js objesine dönüştürür
                 geciciLogListesi.push(logObj);
@@ -38,13 +38,17 @@ async function fetchLogs(){      //Kendime not : async olmayan bir fonksiyonda a
     } catch (error) {
         console.error("Loglar çekilirken javascirpte sorun oldu:", error);
     }
+    finally {
+
+        setTimeout(fetchLogs, 7000);
+    }
 }
 
 function ekranaBas() {
     const container = document.getElementById(`log-container`);
     const filterSelect = document.getElementById(`level-filter`);
 
-    
+
 
     const secilenFiltre = filterSelect.value;
 
@@ -61,7 +65,7 @@ function ekranaBas() {
 function renderLogLine(yeniLog, container) {
     const logSatiri = document.createElement(`div`);
     logSatiri.className = `log-line`;
-    
+
     if (yeniLog.level === `ERROR`) {
         logSatiri.classList.add(`log-error`);
     } else if (yeniLog.level === `WARN`) {
@@ -73,5 +77,5 @@ function renderLogLine(yeniLog, container) {
     logSatiri.innerText = `[${yeniLog.timestamp}] [${yeniLog.service}] [${yeniLog.level}]: ${yeniLog.message}`;
 
     container.appendChild(logSatiri);
-    
+
 }

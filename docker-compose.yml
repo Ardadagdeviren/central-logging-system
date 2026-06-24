@@ -23,6 +23,7 @@ services:
       - TZ=Europe/Istanbul
     networks:
       - log-net
+    restart: always     # çökerse otomatik yeniden başlat
     depends_on:         #collector çalışmadan generatoru başlatma
       - log-collector-service  
 
