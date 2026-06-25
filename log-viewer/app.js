@@ -19,21 +19,11 @@ async function fetchLogs() {      //Kendime not : async olmayan bir fonksiyonda 
             throw new Error(`Sunucu hatası: ${response.status}`);
         }
 
-        const rawData = await response.text();
-        const satirlar = rawData.split(`\n`);      //split geriye dizi döndürüyor
-        const geciciLogListesi = [];
+        const loglar = await response.json();
 
-        satirlar.forEach(satir => {
-
-            try {
-                const logObj = JSON.parse(satir);      //json formatını js objesine dönüştürür
-                geciciLogListesi.push(logObj);
-            } catch (jsonErr) {         //jsonErr catchin içinde bir parametre otomatik js tanımlar
-                console.warn("bozuk json satırı atlandı:", satir);
-            }
-        });
-
-        tumLoglar = geciciLogListesi.slice(-MAX_LOG_SAYISI);
+        if (Array.isArray(loglar) && loglar.length > 0) {
+            tumLoglar = loglar.slice(-MAX_LOG_SAYISI);
+        }
         ekranaBas();
     } catch (error) {
         console.error("Loglar çekilirken javascirpte sorun oldu:", error);

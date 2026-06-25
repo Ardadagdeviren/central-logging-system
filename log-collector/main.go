@@ -1,19 +1,20 @@
 package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-var logFile *os.File
+var db *sql.DB
 
 type logVerisi struct {
+	ID     int       `json:"id"`
 	Mesaj  string    `json:"message" binding:"required"`
 	Seviye string    `json:"level" binding:"required"`
 	Zaman  time.Time `json:"timestamp"`
@@ -23,12 +24,38 @@ type logVerisi struct {
 func main() {
 	var err error
 
-	// app.json dosyasını açıyoruz veya yoksa oluşturuyoruz
-	logFile, err = os.OpenFile("app.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("Dosya açılırken hata çıktı: %v", err)
+	dsn := "log_user:log_password@tcp(mysql-db:3306)/log_db?parseTime=true"
+
+	for i := 0; i < 30; i++ {
+		db, err = sql.Open("mysql", dsn)
+		if err == nil {
+			err = db.Ping() //db ye ping atıyoruz bağlantı kurulmuş mu check ettik
+		}
+		if err == nil {
+			break
+		}
+		fmt.Printf("MySQL bağlantısı tekrar deneniyor %d/30 %v\n", i+1, err)
+		time.Sleep(2 * time.Second)
 	}
-	defer logFile.Close()
+	if err != nil {
+		log.Fatalf("MySQL'e bağlanılamadı: %v", err)
+	}
+	defer db.Close()
+
+	fmt.Println("mysql bağlantısı başarılı.")
+
+	// Tablo yoksa oluştur
+	tabloOlustur := `CREATE TABLE IF NOT EXISTS application_logs (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		service_name VARCHAR(255) NOT NULL,
+		log_level VARCHAR(50) NOT NULL,
+		message TEXT NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	)`
+	if _, err := db.Exec(tabloOlustur); err != nil {
+		log.Fatalf("Tablo oluşturulurken hata: %v", err)
+	}
+	fmt.Println("application_logs tablosu hazır.")
 
 	// Gin motorunu başlatıyoruz.
 	// gin.Default(): Logger + Recovery ile gelir (her isteği terminale basar).
@@ -39,7 +66,7 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery()) // sunucu çökmelerini yakalar (hava yastığı)
 	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		SkipPaths: []string{"/get-logs"}, // bu endpoint'in loglarını bastır
+		SkipPaths: []string{"/get-logs"}, // bu endpoint'in loglarını bastırma
 	}))
 
 	//javascripttin istek atarken sorun yaşamaması için gerekli izin güncellemeleri yaptığım kısım:
@@ -76,35 +103,45 @@ func logHandler(c *gin.Context) {
 		return
 	}
 
-	jsonBytes, err := json.Marshal(yeniLogVerisi) //
+	sorgu := "INSERT INTO application_logs (service_name,log_level,message) VALUES (?,?,?)"
+	_, err := db.Exec(sorgu, yeniLogVerisi.Servis, yeniLogVerisi.Seviye, yeniLogVerisi.Mesaj)
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Log verisi işlenirken bir hata oluştu"})
+		fmt.Print("Veritabanına logu yazarken hata oluştu")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "log veritabanına yazılırken hata oluştu"})
 		return
 	}
-
-	logSatiri := string(jsonBytes) + "\n"
-	fmt.Print(logSatiri) // terminale yazdır
-
-	// app.json dosyasına yazıyoruz
-	_, err = logFile.WriteString(logSatiri)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Log dosyaya yazılırken bir hata oluştu"})
-		return
-	}
+	fmt.Printf("[KAYDEDİLDİ] Servis: %s | Seviye: %s | Mesaj: %s\n", yeniLogVerisi.Servis, yeniLogVerisi.Seviye, yeniLogVerisi.Mesaj)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Log başarılı bir şekilde alındı"})
 }
 
 func getLogsHandler(c *gin.Context) {
-	data, err := os.ReadFile("app.json")
+
+	sorgu := "SELECT id ,service_name,log_level,message,created_at FROM application_logs ORDER BY created_at DESC" // ORBER BY:en güncel olandan eski olana doğru sıralı getir   DESC : azalan sırada
+	satir, err := db.Query(sorgu)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Log dosyası okunurken hata ile karşılaştık"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Veritabanında log okunurken hata ile karşılaştık"})
 		return
 	}
+	defer satir.Close()
+
+	var loglar []logVerisi
+
+	for satir.Next() { //NEXT.() imleci bir sağa kaydır diyormuş okuncak bir şey kalamdığında false döndürüp döngüden çıkıyormuş.
+		var temp logVerisi
+		if err := satir.Scan(&temp.ID, &temp.Servis, &temp.Seviye, &temp.Mesaj, &temp.Zaman); err != nil { //rows'dakileri tempin içine yazıyoruz
+			fmt.Printf("Satır okunurken hata oluştu:%v", err)
+			continue
+		}
+
+		loglar = append(loglar, temp)
+
+	}
+	c.JSON(http.StatusOK, loglar)
 
 	//kendime not:
 	// Okunan veri zaten ham JSON byte dizisi olduğu için, c.JSON yerine c.Data kullanarak
 
-	c.Data(http.StatusOK, "application/json; charset=utf-8", data)
 	//charset=utf-8: dünyadaki tüm harf emojileri kapsar benim jsonumda türkçe karakterler olduğu için bunu belirtiyorum.
 }

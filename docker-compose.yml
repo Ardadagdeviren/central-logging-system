@@ -6,13 +6,15 @@ services:
     container_name: log-collector-container
     environment:
       - TZ=Europe/Istanbul
-    ports: 
-      - "8080:8080"    #ilk port benim bilgisayarımın portu ikinci port collector konteynırının portu.Yani benim bilgisayara 8080 den gelenleri konteynırın 8080 nine ilet demek
+    ports:
+      - "8080:8080" #ilk port benim bilgisayarımın portu ikinci port collector konteynırının portu.Yani benim bilgisayara 8080 den gelenleri konteynırın 8080 nine ilet demek
     volumes:
-      - shared-logs:/app
-    restart: always     # çökerse otomatik çalışmasını sağlar
+      - shared-logs:/app/data
+    restart: always # çökerse otomatik çalışmasını sağlar
     networks:
       - log-net
+    depends_on:
+      - mysql-db
   log-generator-service:
     build:
       context: ./log-generator
@@ -23,29 +25,41 @@ services:
       - TZ=Europe/Istanbul
     networks:
       - log-net
-    restart: always     # çökerse otomatik yeniden başlat
-    depends_on:         #collector çalışmadan generatoru başlatma
-      - log-collector-service  
+    restart: always # çökerse otomatik yeniden başlat
+    depends_on:
+      #collector çalışmadan generatoru başlatma
+      - log-collector-service
 
   log-viewer-service:
     image: nginx:alpine
     container_name: netinternet-dashboard
     ports:
-      - "8888:80" 
+      - "8888:80"
     volumes:
-      - ./log-viewer:/usr/share/nginx/html:ro      #benim bilgisayarımdaki log-viewrı klasörü ile konteynırdaki web ile köprü kurar
+      - ./log-viewer:/usr/share/nginx/html:ro #benim bilgisayarımdaki log-viewrı klasörü ile konteynırdaki web ile köprü kurar
     networks:
-      - log-net 
-    restart: always 
-  
-    
+      - log-net
+    restart: always
 
-    
+  mysql-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: log_db
+      MYSQL_USER: log_user
+      MYSQL_PASSWORD: log_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - log-net
+    restart: always
+
 networks:
   log-net:
     driver: bridge
-
   #bilgisiyarımda ortak depolama alanı oluşturmasını söylüyorum app.json falan bunun içinde oluyor.
 volumes:
   shared-logs:
-  
+  mysql_data:
